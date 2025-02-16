@@ -9,11 +9,14 @@ use Illuminate\Http\Request;
 class BookController extends Controller
 {
     public function index()
-    {
-        return view('books.index', [
-            'books' => Book::paginate(10)
-        ]);
-    }
+{
+    $books = Book::with('author')->paginate(10, ['*'], 'books_page');
+    $authors = Author::with('books')->paginate(10, ['*'], 'authors_page');
+
+    return view('welcome', compact('books', 'authors'));
+}
+
+
 
     public function create()
     {
@@ -32,7 +35,7 @@ class BookController extends Controller
 
         Book::create($data);
 
-        return back()->with('message', 'Book created.');
+        return redirect('/')->with('message', 'Book created successfully.');
     }
 
     public function edit(Book $book)
@@ -43,22 +46,24 @@ class BookController extends Controller
 
     public function update(Book $book, Request $request)
     {
+        $bookId = $book->getKey();
         $data = $request->validate([
             'title' => 'required|max:255',
-            'serial_number' => 'required|string|max:255|unique:books,serial_number,' . $book->id,
+            'serial_number' => 'required|string|max:255|unique:books,serial_number,' . $bookId,
             'published_at' => 'required|date',
             'author_id' => 'required|integer|exists:authors,id',
         ]);
 
         $book->update($data);
 
-        return back()->with('message', 'Book updated.');
+        return redirect('/')->with('message', 'Book updated successfully.');
     }
 
-    public function destroy(Book $book)
+    public function destroy($id)
     {
+        $book = Book::findOrFail($id);
         $book->delete();
 
-        return back()->with('message', 'Book deleted.');
+        return redirect('/')->with('message', 'Book deleted successfully.');
     }
 }
